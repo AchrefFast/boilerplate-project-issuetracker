@@ -14,6 +14,7 @@ module.exports = function (app) {
       let project = req.params.project;
 
       const q = req.query;
+      // console.log('This is the raw data coming from the client \n: ', q);
       let issues = [];
       Project.findOne({ name: project }, function (err, doc) {
         if (doc) {
@@ -24,11 +25,14 @@ module.exports = function (app) {
             if (pr == 'open') {
               issues = issues.filter(elm => '' + elm[pr] == q[pr]);
             }
-            else if (pr == 'created_on' || pr == 'updated_on') {
+            if (pr == 'created_on' || pr == 'updated_on') {
               issues = issues.filter(elm => elm[pr].getTime() == Date.parse(q[pr]));
             }
-            else if (pr == 'issue_title' || pr == 'issue_text' || pr == 'created_by' || pr == 'assigned_to' || pr == 'status_text' || pr == '_id') {
+            if (pr == 'issue_title' || pr == 'issue_text' || pr == 'created_by' || pr == 'assigned_to' || pr == 'status_text') {
               issues = issues.filter(elm => elm[pr] == q[pr]);
+            }
+            if (pr == '_id') {
+              issues = issues.filter(elm => '' + elm[pr] == '' + q[pr])
             }
           }
           // if (q.open) {
@@ -159,20 +163,21 @@ module.exports = function (app) {
     .put(function (req, res) {
       let project = req.params.project;
       const data = req.body;
-      // console.log(req.body); 
+      console.log('This is the raw data: ', req.body);
       let fields = false;
+      if (!data._id) {
+        console.log("{ error: 'missing _id' }", data);
+        res.json({ error: 'missing _id' });
+        return;
+      }
       for (const i in data) {
         // console.log(i);
         if (i == '_id' && !data[i]) {
-          // console.log("{ error: 'missing _id' }");
+          console.log("{ error: 'missing _id' }", data);
           res.json({ error: 'missing _id' });
           return;
         }
-        else if (!data._id) {
-          // console.log("{ error: 'missing _id' }");
-          res.json({ error: 'missing _id' });
-          return;
-        } else {
+        else {
           if (data[i] && i != '_id') {
             fields = true;
           }
@@ -180,20 +185,22 @@ module.exports = function (app) {
       }
 
       Project.findOne({ name: project }, function (err, doc) {
-        if (err) res.json({ error: 'could not update, ', '_id': data._id });
+        if (err) res.json({ error: 'could not update', '_id': data._id });
         if (!doc) {
-          // console.log("Couldn't find The specific Project");
-          res.json({ error: 'could not update, ', '_id': data._id });
+          console.log("Couldn't find The specific Project", data);
+          res.json({ error: 'could not update', '_id': data._id });
         }
         else {
-          // console.log("Project Found");
+          //console.log("Project Found");
           let issue = doc.issues.id(req.body._id);
-          if (!issue) {
-            res.json({ error: 'could not update', _id: data._id });
+          if (!fields) {
+            console.log('No update fields(s) send', data);
+            res.json({ error: 'no update field(s) sent', '_id': data._id });
             return;
           }
-          if (!fields) {
-            res.json({ error: 'no update field(s) sent', _id: data._id });
+          if (!issue) {
+            console.log('No issue with the id ', data._id, 'was found \n', data);
+            res.json({ error: 'could not update', '_id': data._id });
             return;
           }
           for (const i in data) {
@@ -211,29 +218,29 @@ module.exports = function (app) {
     .delete(function (req, res) {
       let project = req.params.project;
       // console.log(req.body);
+      const _id = req.body._id;
+      if (!_id) {
+        res.json({ error: 'missing _id' });
+        return;
+      }
       Project.findOne({ name: project }, function (err, doc) {
-        if (err) res.json({ error: 'could not delete', '_id': req.body._id });
+        if (err) res.json({ error: 'could not delete', '_id': _id });
         if (doc) {
-          if (!req.body._id) {
-            res.json({ error: 'missing _id' });
-            return;
-          }
-          let issue = doc.issues.id(req.body._id);
+          let issue = doc.issues.id(_id);
           if (!issue) {
-
-            res.json({ error: 'could not delete', '_id': req.body._id });
+            res.json({ error: 'could not delete', '_id': _id });
             return;
           }
           else {
             issue.remove();
             doc.save();
-            res.json({ result: 'successfully deleted', '_id': req.body._id })
+            res.json({ result: 'successfully deleted', '_id': _id })
             return;
           }
 
         }
         else if (!doc) {
-          res.json({ error: 'could not delete', '_id': req.body._id });
+          res.json({ error: 'could not delete', '_id': _id });
           return;
         }
       })

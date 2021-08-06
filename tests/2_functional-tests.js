@@ -13,7 +13,7 @@ chai.use(chaiHttp);
 suite('Functional Tests', function () {
     test('Create an issue with every field: POST request to /api/issues/{project}', function (done) {
         chai.request(server)
-            .post('/api/issues/test3')
+            .post('/api/issues/test4')
             .type('form')
             .send({
                 'issue_title': 'Test',
@@ -36,7 +36,7 @@ suite('Functional Tests', function () {
 
     test('Create an issue with only required fields: POST request to /api/issues/{project}', function (done) {
         chai.request(server)
-            .post('/api/issues/test3')
+            .post('/api/issues/test4')
             .type('form')
             .send({
                 'issue_title': 'Test',
@@ -60,7 +60,7 @@ suite('Functional Tests', function () {
 
     test('Create an issue with missing required fields: POST request to /api/issues/{project}', function (done) {
         chai.request(server)
-            .post('/api/issues/test3')
+            .post('/api/issues/test4')
             .type('form')
             .send({
                 assigne_to: 'something'
